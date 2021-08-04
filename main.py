@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import util
 
-st.write("Whatsapp Chat Analyzer")
+st.header("Whatsapp Chat Analyzer")
 
 with st.form(key='my_form'):
     chat_file = st.file_uploader(label='Upload your chats .txt file.')
