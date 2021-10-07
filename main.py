@@ -2,13 +2,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import util
+import plotly.express as px
 
 st.header("Whatsapp Chat Analyzer")
 
 with st.form(key='my_form'):
     chat_file = st.file_uploader(label='Upload your chats .txt file.')
     link = 'https://faq.whatsapp.com/android/chats/how-to-save-your-chat-history/?lang=en'
-    st.write('Click here to know how to exort whatsapp chats.')
+    st.write('Click here to know how to export whatsapp chats.')
     st.markdown(link, unsafe_allow_html=True)
     submit_button = st.form_submit_button(label='Submit')
 
@@ -40,18 +41,34 @@ if data:
     st.write(len(df))
 
     author_value_counts = df['Author'].value_counts() # Number of messages per author
+
+    # Message count pie chart
+    # print(author_value_counts.keys())
+    fig = px.pie(values=author_value_counts,names=author_value_counts.keys(),title="Percentage of message send by each user")
+    st.plotly_chart(fig)
+
     top_10_author_value_counts = author_value_counts.head(10) # Number of messages per author for the top 10 most active authors
-    st.subheader("No. of messages")
-    st.bar_chart(top_10_author_value_counts)
+    x = top_10_author_value_counts.keys()
+    y = top_10_author_value_counts
+    fig = px.bar(x=x,y=y,labels={'x':'Author', 'y':'Number of messages'})
+    st.plotly_chart(fig)
     #top_10_author_value_counts.plot.barh() # Plot a bar chart using pandas built-in plotting apis
+
 
     media_messages_df = df[df['Message'] == '<Media omitted>']
 
     author_media_messages_value_counts = media_messages_df['Author'].value_counts()
-    top_10_author_media_messages_value_counts = author_media_messages_value_counts.head(10)
+
     st.subheader("No. of media messages")
     st.write(len(media_messages_df))
-    st.bar_chart(top_10_author_media_messages_value_counts)
+    # Media Message count pie chart
+    fig = px.pie(values=author_media_messages_value_counts,names=author_media_messages_value_counts.keys())
+    st.plotly_chart(fig)
+
+    top_10_author_media_messages_value_counts = author_media_messages_value_counts.head(10)
+    
+    fig = px.bar(x=top_10_author_media_messages_value_counts.keys(),y=top_10_author_media_messages_value_counts,labels={'x':'Author', 'y':'media messages'})
+    st.plotly_chart(fig)
 
     null_authors_df = df[df['Author'].isnull()]
     messages_df = df.drop(null_authors_df.index) # Drops all rows of the data frame containing messages from null authors
@@ -67,16 +84,27 @@ if data:
     continuous_columns = ['Letter_Count', 'Word_Count']
     messages_df[continuous_columns].describe()
 
-    total_word_count_grouped_by_author = messages_df[['Author', 'Word_Count']].groupby('Author').sum()
-    sorted_total_word_count_grouped_by_author = total_word_count_grouped_by_author.sort_values('Word_Count', ascending=False)
-    top_10_sorted_total_word_count_grouped_by_author = sorted_total_word_count_grouped_by_author.head(10)
+    total_word_count_grouped_by_author = messages_df.groupby('Author')['Word_Count'].sum()
     st.subheader("Word Count")
-    st.bar_chart(top_10_sorted_total_word_count_grouped_by_author)
-
+    st.write(total_word_count_grouped_by_author.sum())
+    #print(total_word_count_grouped_by_author.head())
+    x = total_word_count_grouped_by_author.keys()
+    y = total_word_count_grouped_by_author
+    fig = px.bar(x=x,y=y,labels={'x':'Author', 'y':'Word Count'})
+    st.plotly_chart(fig)
     
 
     messages_df["24_Hour_Format"] = messages_df['Time'].apply(util.change_format)
     st.subheader("Day Activity (No of messages recieved every hour of the day)")
-    st.bar_chart(messages_df["24_Hour_Format"].value_counts())
+    day_activity = messages_df["24_Hour_Format"].value_counts()
+    x = day_activity.keys()
+    y = day_activity
+    
+    fig = px.bar(x=x,y=y,labels={'x':'Time of the day', 'y':'number of messages'})
+    fig.update_layout(bargap=0.2)
+    st.plotly_chart(fig)
+
+    fig = px.pie(names=x[:10],values=y[:10],title="10 most active time of the day")
+    st.plotly_chart(fig)
 
 
